@@ -35,7 +35,7 @@
         };
     </script>
     <script src="{{ asset('vendor/leaflet/leaflet.js') }}" defer></script>
-    <script src="{{ asset('js/catering.js') }}?v=9" defer></script>
+    <script src="{{ asset('js/catering.js') }}?v=10" defer></script>
 </head>
 <body data-page="{{ $page }}">
     <a class="skip-link" href="#main">Lewati ke konten</a>
