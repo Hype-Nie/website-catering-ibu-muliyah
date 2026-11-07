@@ -15,7 +15,7 @@ class RegisterRequest extends FormRequest
 
     public function rules(): array
     {
-        $phoneField = $this->has('phone_number') ? 'phone_number' : 'nomor_telepon';
+        $phoneField = $this->has('phone') ? 'phone' : ($this->has('phone_number') ? 'phone_number' : 'nomor_telepon');
         $nameField = $this->has('name') ? 'name' : 'nama';
         $passField = $this->has('password') ? 'password' : 'kata_sandi';
 
@@ -33,6 +33,7 @@ class RegisterRequest extends FormRequest
             'email.unique' => 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.',
             'phone_number.unique' => 'Nomor WhatsApp / telepon ini sudah terdaftar.',
             'nomor_telepon.unique' => 'Nomor WhatsApp / telepon ini sudah terdaftar.',
+            'phone.unique' => 'Nomor WhatsApp / telepon ini sudah terdaftar.',
             'password.min' => 'Password minimal berjumlah 8 karakter.',
             'kata_sandi.min' => 'Password minimal berjumlah 8 karakter.',
             'password.confirmed' => 'Konfirmasi password belum sama.',

@@ -29,7 +29,7 @@
             }
         };
     </script>
-    <script src="{{ asset('js/catering.js') }}?v=2" defer></script>
+    <script src="{{ asset('js/catering.js') }}?v=3" defer></script>
 </head>
 <body data-page="{{ $page }}">
     <a class="skip-link" href="#main">Lewati ke konten</a>
