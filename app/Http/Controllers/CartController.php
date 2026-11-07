@@ -76,7 +76,13 @@ class CartController extends Controller
         }
 
         if ($request->wantsJson()) {
-            return response()->json(['message' => 'Menu berhasil ditambahkan ke keranjang.']);
+            $cartItems = $this->getCartQuery()->with('menu')->get();
+
+            return response()->json([
+                'message' => 'Menu berhasil ditambahkan ke keranjang.',
+                'count' => (int) $cartItems->sum('kuantitas'),
+                'items' => $cartItems,
+            ], 201);
         }
 
         return redirect()->route('cart.index')->with('success', 'Menu berhasil ditambahkan ke keranjang.');

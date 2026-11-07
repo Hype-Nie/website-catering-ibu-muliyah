@@ -51,8 +51,8 @@ class CheckoutController extends Controller
             'kitchen' => [
                 'name' => config('catering.kitchen.name', 'Dapur Pusat Menteng'),
                 'address' => config('catering.kitchen.address', 'Jl. Menteng No. 10, Jakarta Pusat'),
-                'latitude' => config('catering.kitchen.latitude', -6.1944),
-                'longitude' => config('catering.kitchen.longitude', 106.8317),
+                'latitude' => (float) config('catering.kitchen.latitude', HaversineDistanceService::KITCHEN_LAT),
+                'longitude' => (float) config('catering.kitchen.longitude', HaversineDistanceService::KITCHEN_LON),
             ],
         ]);
     }

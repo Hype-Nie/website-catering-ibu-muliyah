@@ -16,13 +16,13 @@ class OrderNumberService
 
         $generator = function () use ($prefix): string {
             $latestOrder = Order::lockForUpdate()
-                ->where('order_number', 'LIKE', $prefix.'%')
+                ->where('nomor_pesanan', 'LIKE', $prefix.'%')
                 ->orderByDesc('id')
                 ->first();
 
             $nextSequence = 1;
             if ($latestOrder) {
-                $lastSequence = (int) substr($latestOrder->order_number, strlen($prefix));
+                $lastSequence = (int) substr($latestOrder->nomor_pesanan, strlen($prefix));
                 $nextSequence = $lastSequence + 1;
             }
 

@@ -11,18 +11,22 @@ use Illuminate\Validation\Validator;
 
 class PaymentProofRequest extends FormRequest
 {
+    private function findOrder(): ?Order
+    {
+        $raw = $this->input('id_pesanan') ?? $this->input('order_id') ?? $this->input('id');
+        if (! $raw) {
+            return null;
+        }
+
+        return is_numeric($raw) ? Order::find((int) $raw) : Order::where('nomor_pesanan', (string) $raw)->first();
+    }
+
     public function authorize(): bool
     {
-        $orderId = (int) ($this->input('id_pesanan') ?? $this->input('order_id'));
-        $order = Order::find($orderId);
-        if (! $order) {
+        $order = $this->findOrder();
+        if (! $order || $order->status_pembayaran === Order::PAYMENT_PAID || $order->status_pesanan === Order::STATUS_CANCELLED) {
             return false;
         }
-
-        if ($order->status_pembayaran === Order::PAYMENT_PAID || $order->status_pesanan === Order::STATUS_CANCELLED) {
-            return false;
-        }
-
         if (auth()->check()) {
             /** @var User $user */
             $user = auth()->user();
@@ -35,11 +39,8 @@ class PaymentProofRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->has('id_pesanan') && ! $this->has('order_id')) {
-            $this->merge(['order_id' => $this->input('id_pesanan')]);
-        }
-        if ($this->has('order_id') && ! $this->has('id_pesanan')) {
-            $this->merge(['id_pesanan' => $this->input('order_id')]);
+        if ($order = $this->findOrder()) {
+            $this->merge(['id_pesanan' => $order->id, 'order_id' => $order->id]);
         }
     }
 

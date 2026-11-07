@@ -59,10 +59,9 @@ class AddToCartRequest extends FormRequest
             }
 
             if ($menu && ! $menu->checkMinOrder($quantity)) {
-                $validator->errors()->add(
-                    'quantity',
-                    "Pesanan untuk menu '{$menu->nama_menu}' minimal berjumlah {$menu->minimal_pesanan} porsi."
-                );
+                $msg = "Pesanan untuk menu '{$menu->nama_menu}' minimal berjumlah {$menu->minimal_pesanan} porsi.";
+                $validator->errors()->add('quantity', $msg);
+                $validator->errors()->add('kuantitas', $msg);
             }
         });
     }

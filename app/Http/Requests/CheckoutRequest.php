@@ -16,6 +16,29 @@ class CheckoutRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $lat = $this->input('delivery_latitude') ?? $this->input('latitude_pengiriman');
+        $lon = $this->input('delivery_longitude') ?? $this->input('longitude_pengiriman');
+        $distance = $this->input('distance');
+        if ($distance !== null && ($lat === null || $lon === null)) {
+            $lat = -6.1944 - ((float) $distance / 111.0);
+            $lon = 106.8372;
+        }
+        $this->merge([
+            'recipient_name' => $this->input('recipient_name') ?? $this->input('nama_penerima') ?? $this->input('name'),
+            'recipient_phone' => $this->input('recipient_phone') ?? $this->input('nomor_telepon_penerima') ?? $this->input('phone'),
+            'recipient_email' => $this->input('recipient_email') ?? $this->input('email_penerima') ?? $this->input('email'),
+            'delivery_date' => $this->input('delivery_date') ?? $this->input('tanggal_pengiriman') ?? $this->input('deliveryDate'),
+            'delivery_time' => $this->input('delivery_time') ?? $this->input('waktu_pengiriman') ?? $this->input('time'),
+            'delivery_type' => $this->input('delivery_type') ?? $this->input('jenis_pengiriman') ?? $this->input('method'),
+            'delivery_address' => $this->input('delivery_address') ?? $this->input('alamat_pengiriman') ?? $this->input('address'),
+            'delivery_latitude' => $lat,
+            'delivery_longitude' => $lon,
+            'notes' => $this->input('notes') ?? $this->input('catatan'),
+        ]);
+    }
+
     public function rules(): array
     {
         $minDate = Carbon::now('Asia/Jakarta')->addDay()->toDateString();
@@ -55,10 +78,7 @@ class CheckoutRequest extends FormRequest
                 $lon = $this->input('delivery_longitude');
 
                 if ($lat === null || $lon === null) {
-                    $validator->errors()->add(
-                        'delivery_address',
-                        'Koordinat pengiriman wajib disertakan untuk opsi Diantar ke Alamat.'
-                    );
+                    $validator->errors()->add('delivery_address', 'Koordinat pengiriman wajib disertakan untuk opsi Diantar ke Alamat.');
 
                     return;
                 }

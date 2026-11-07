@@ -15,11 +15,13 @@ class UpdateOrderStatusRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->has('status_pesanan') && ! $this->has('order_status')) {
-            $this->merge(['order_status' => $this->input('status_pesanan')]);
-        }
-        if ($this->has('order_status') && ! $this->has('status_pesanan')) {
-            $this->merge(['status_pesanan' => $this->input('order_status')]);
+        $val = $this->input('status_pesanan') ?? $this->input('order_status') ?? $this->input('status');
+        if ($val !== null) {
+            $this->merge([
+                'status_pesanan' => (int) $val,
+                'order_status' => (int) $val,
+                'status' => (int) $val,
+            ]);
         }
     }
 

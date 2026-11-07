@@ -9,7 +9,8 @@
     <title>Dapur Menteng — Nasi uduk untuk makan bersama</title>
     <link rel="icon" href="{{ asset('images/brand.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/catering.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/catering.css') }}?v=3">
     <script>
         window.__SERVER_DATA__ = {
             csrfToken: "{{ csrf_token() }}",
@@ -17,6 +18,10 @@
             page: "{{ $page ?? 'home' }}",
             menus: @json($menus ?? null),
             categories: @json($categories ?? null),
+            items: @json($items ?? null),
+            cartCount: {{ isset($cartCount) ? (int) $cartCount : 0 }},
+            subtotal: {{ isset($subtotal) ? (float) $subtotal : 0 }},
+            kitchen: @json($kitchen ?? null),
             orders: @json($orders ?? null),
             order: @json($order ?? null),
             customers: @json($customers ?? null),
@@ -25,11 +30,12 @@
             pendingVerifications: {{ isset($pendingVerifications) ? (int) $pendingVerifications : 0 }},
             flash: {
                 success: @json(session('success')),
-                error: @json(session('error') ?? $errors->first())
+                error: @json(session('error') ?? ($errors ?? null)?->first())
             }
         };
     </script>
-    <script src="{{ asset('js/catering.js') }}?v=3" defer></script>
+    <script src="{{ asset('vendor/leaflet/leaflet.js') }}" defer></script>
+    <script src="{{ asset('js/catering.js') }}?v=9" defer></script>
 </head>
 <body data-page="{{ $page }}">
     <a class="skip-link" href="#main">Lewati ke konten</a>
