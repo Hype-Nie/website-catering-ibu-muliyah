@@ -3,13 +3,33 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#244d3b">
     <meta name="description" content="Nasi uduk dari Dapur Menteng, Jakarta. Pilih porsi satuan, nasi box, atau prasmanan untuk makan bersama. Pesan minimal H-1.">
     <title>Dapur Menteng — Nasi uduk untuk makan bersama</title>
     <link rel="icon" href="{{ asset('images/brand.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="{{ asset('css/fonts.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/catering.css') }}?v=1">
-    <script src="{{ asset('js/catering.js') }}?v=1" defer></script>
+    <link rel="stylesheet" href="{{ asset('css/catering.css') }}?v=2">
+    <script>
+        window.__SERVER_DATA__ = {
+            csrfToken: "{{ csrf_token() }}",
+            user: @json(auth()->user()),
+            page: "{{ $page ?? 'home' }}",
+            menus: @json($menus ?? null),
+            categories: @json($categories ?? null),
+            orders: @json($orders ?? null),
+            order: @json($order ?? null),
+            customers: @json($customers ?? null),
+            totalRevenue: {{ isset($totalRevenue) ? (float) $totalRevenue : 0 }},
+            totalOrders: {{ isset($totalOrders) ? (int) $totalOrders : 0 }},
+            pendingVerifications: {{ isset($pendingVerifications) ? (int) $pendingVerifications : 0 }},
+            flash: {
+                success: @json(session('success')),
+                error: @json(session('error') ?? $errors->first())
+            }
+        };
+    </script>
+    <script src="{{ asset('js/catering.js') }}?v=2" defer></script>
 </head>
 <body data-page="{{ $page }}">
     <a class="skip-link" href="#main">Lewati ke konten</a>

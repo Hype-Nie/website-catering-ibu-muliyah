@@ -21,7 +21,11 @@ const baseMenus = [
 {id:8,name:'Prasmanan Paket B',category:'prasmanan',price:50000,min:30,image:'hero.jpg',desc:'Nasi uduk, ayam bakar, rendang, sayur, bihun, sambal, dan kerupuk.'},
 {id:9,name:'Prasmanan Paket Keluarga',category:'prasmanan',price:35000,min:30,image:'box.jpg',desc:'Nasi uduk dan lauk rumahan untuk acara keluarga.',available:false}
 ].map(m=>({available:true,...m}));
-let menus=read('menus',baseMenus), cart=read('cart',[]), user=read('user',null);
+const sData = window.__SERVER_DATA__ || {};
+const serverMenus = (sData.menus && sData.menus.length)
+  ? sData.menus.map(m=>({id:m.id,name:m.nama_menu||m.name,category:m.kategori?.slug||m.category?.slug||m.jenis_paket||m.package_type,price:Number(m.harga||m.price),min:m.minimal_pesanan||m.min_order,image:m.foto_menu||m.image_path,desc:m.deskripsi||m.description,available:Boolean(m.status_tersedia!==undefined?m.status_tersedia:m.is_available)}))
+  : null;
+let menus=serverMenus||read('menus',baseMenus), cart=read('cart',[]), user=sData.user||read('user',null);
 const today = () => new Date().toLocaleDateString('en-CA');
 const tomorrow = () => {const d=new Date();d.setDate(d.getDate()+1);return d.toLocaleDateString('en-CA');};
 const date = s => new Date(s+'T12:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
@@ -29,7 +33,34 @@ const cats = {satuan:'Porsi satuan',box:'Nasi box',prasmanan:'Prasmanan'};
 const states=['Menunggu pembayaran','Diproses dapur','Dikirim / siap diambil','Selesai'];
 const customers=[{name:'Siti Rahma',email:'siti@contoh.test',phone:'081234567890'},{name:'Budi Santoso',email:'budi@contoh.test',phone:'081298765432'},{name:'Dewi Lestari',email:'dewi@contoh.test',phone:'081355667788'},{name:'Andi Pratama',email:'andi@contoh.test',phone:'081388990011'}];
 const seedOrders=[['0001',0,4,10,'Menunggu verifikasi',0],['0002',1,7,30,'Lunas',1],['0003',2,8,30,'Lunas',2],['0004',0,1,4,'Ditolak',0],['0005',0,4,20,'Lunas',3],['0006',1,8,40,'Lunas',3]].map(([id,c,m,q,p,s],i)=>{const menu=baseMenus.find(x=>x.id===m);return {id:'DM-261105-'+id,name:customers[c].name,email:customers[c].email,phone:customers[c].phone,date:'2026-11-'+String(5-i%5).padStart(2,'0'),deliveryDate:tomorrow(),time:'10:00',method:'delivery',address:'Jl. Cikini Raya No. 12, Menteng, Jakarta Pusat',items:[{...menu,qty:q,note:'Sambal dipisah'}],fee:15000,payment:p,status:s,proof:p==='Menunggu verifikasi'?'bukti-transfer-contoh.png':null};});
-let orders=read('orders',seedOrders);
+let serverOrders = null;
+if (sData.orders && sData.orders.length) {
+    serverOrders = sData.orders.map(o => ({
+        id: o.nomor_pesanan || o.order_number || ('DM-' + o.id),
+        name: o.nama_penerima || o.recipient_name,
+        email: o.email_penerima || o.recipient_email || (o.user?.email || o.pengguna?.email || ''),
+        phone: o.nomor_telepon_penerima || o.recipient_phone,
+        date: String(o.tanggal_pesanan || o.order_date || o.created_at || '').slice(0, 10),
+        deliveryDate: String(o.tanggal_pengiriman || o.delivery_date || '').slice(0, 10),
+        time: o.waktu_pengiriman || o.delivery_time || '10:00',
+        method: o.jenis_pengiriman || o.delivery_type || 'delivery',
+        address: o.alamat_pengiriman || o.delivery_address || 'Ambil di dapur',
+        items: (o.items || []).map(it => ({
+            id: it.id_menu || it.menu_id,
+            name: it.nama_menu || it.menu_name,
+            price: Number(it.harga || it.price),
+            qty: it.kuantitas || it.quantity,
+            note: it.catatan || it.notes || '',
+            image: it.menu?.foto_menu || it.menu?.image_path || 'hero.jpg',
+        })),
+        fee: Number(o.biaya_pengiriman ?? o.delivery_fee ?? 0),
+        payment: o.status_pembayaran || o.payment_status || 'Menunggu pembayaran',
+        status: Number(o.status_pesanan ?? o.order_status ?? 0),
+        proof: o.payment?.bukti_transfer || o.payment?.proof_image || null,
+        rejection: o.payment?.catatan_penolakan || o.payment?.rejection_note || null,
+    }));
+}
+let orders=serverOrders||read('orders',seedOrders);
 let activeCategory=new URLSearchParams(location.search).get('kategori')||'satuan';
 if(!cats[activeCategory]) activeCategory='satuan';
 const total = items => items.reduce((a,x)=>a+x.price*x.qty,0);
@@ -52,7 +83,37 @@ function cartPage(){return `<div class="container page-content">${heading('Keran
 function empty(t,d,url,label){return `<div class="empty-state">${icon('bag')}<h2>${t}</h2><p>${d}</p>${url?button(url,label):''}</div>`;}
 function summary(items,fee,action,temporary=false){return `<aside class="panel summary"><h2>Ringkasan pesanan</h2>${items.map(x=>`<div class="summary-row"><span>${esc(x.name)}<small>${x.qty} × ${money(x.price)}</small></span><b>${money(x.qty*x.price)}</b></div>`).join('')}<hr><div class="summary-row"><span>Subtotal menu</span><span>${money(total(items))}</span></div><div class="summary-row"><span>Ongkos kirim</span><span id="shipping-cost">${temporary?'Saat checkout':money(fee)}</span></div><div class="summary-total"><span>${temporary?'Total sementara':'Total tagihan'}</span><b id="grand-total">${money(total(items)+fee)}</b></div>${action}<p class="summary-note">${icon('clock')} Pesan minimal H-1 agar hidangan bisa kami siapkan segar.</p></aside>`;}
 function checkout(){if(!cart.length)return `<div class="container page-content">${heading('Checkout','Lengkapi detail pesanan Anda.')}${empty('Belum ada menu dipilih','Tambahkan menu ke keranjang sebelum checkout.','/menu','Pilih menu')}</div>`;return `<div class="container page-content">${heading('Sedikit lagi, siap dipesan.','Lengkapi penerima, jadwal, dan cara menerima hidangan.')} ${steps(1)}<form id="checkout-form" class="two-column"><div><section class="panel form-panel"><h2>Informasi penerima</h2><div class="form-grid"><label>Nama penerima<input name="name" autocomplete="name" value="${esc(user?.name||'')}" required></label><label>Nomor WhatsApp<input name="phone" type="tel" autocomplete="tel" pattern="[0-9+ ()-]{9,18}" placeholder="08xxxxxxxxxx" value="${esc(user?.phone||'')}" required></label></div></section><section class="panel form-panel"><h2>Kapan hidangan dibutuhkan?</h2><p class="muted">Pesan minimal sehari sebelum acara.</p><div class="form-grid"><label>Tanggal acara<input type="date" name="deliveryDate" min="${tomorrow()}" value="${tomorrow()}" required></label><label>Jam pengantaran / pengambilan<input type="time" name="time" value="10:00" min="06:00" max="20:00" required></label></div></section><section class="panel form-panel"><h2>Cara menerima pesanan</h2><div class="delivery-choices"><label><input type="radio" name="method" value="delivery" checked>${icon('truck')}<span>Diantar ke lokasi<small>Radius maksimal 20 km</small></span></label><label><input type="radio" name="method" value="pickup">${icon('bag')}<span>Ambil di dapur<small>Tanpa ongkos kirim</small></span></label></div><div id="delivery-fields"><label>Alamat lengkap<textarea name="address" rows="3" required placeholder="Jalan, nomor rumah, kelurahan, kecamatan">${esc(user?.address||'')}</textarea></label><label>Perkiraan jarak pengiriman<select name="distance"><option value="3">3 km — Menteng</option><option value="8">8 km — dalam jangkauan</option><option value="15">15 km — dalam jangkauan</option><option value="25">25 km — di luar jangkauan</option></select></label><p id="distance-message" class="notice compact">Lokasi dalam jangkauan pengiriman.</p><p class="muted small-text">Perkiraan tarif: Rp15.000 untuk 5 km pertama, lalu Rp2.000/km. Peta dan perhitungan lokasi aktual belum terhubung.</p></div><p id="pickup-message" class="notice" hidden>Ambil di Dapur Menteng, Jakarta Pusat, sesuai jadwal pesanan.</p></section><section class="panel form-panel"><h2>Catatan tambahan</h2><label>Informasi untuk dapur atau kurir (opsional)<textarea name="notes" rows="3" maxlength="500" placeholder="Patokan alamat atau kebutuhan acara"></textarea></label></section></div>${summary(cart,15000,'<button class="button full" type="submit">Buat pesanan '+icon('arrow')+'</button>')}</form></div>`;}
-function selectedOrder(){const id=new URLSearchParams(location.search).get('id');return orders.find(o=>o.id===id)||orders.find(o=>o.email===(user?.email||'siti@contoh.test'))||null;}
+function selectedOrder(){
+    if (sData.order) {
+        const o = sData.order;
+        return {
+            id: o.nomor_pesanan || o.order_number || ('DM-' + o.id),
+            name: o.nama_penerima || o.recipient_name,
+            email: o.email_penerima || o.recipient_email || (o.user?.email || o.pengguna?.email || ''),
+            phone: o.nomor_telepon_penerima || o.recipient_phone,
+            date: String(o.tanggal_pesanan || o.order_date || o.created_at || '').slice(0, 10),
+            deliveryDate: String(o.tanggal_pengiriman || o.delivery_date || '').slice(0, 10),
+            time: o.waktu_pengiriman || o.delivery_time || '10:00',
+            method: o.jenis_pengiriman || o.delivery_type || 'delivery',
+            address: o.alamat_pengiriman || o.delivery_address || 'Ambil di dapur',
+            items: (o.items || []).map(it => ({
+                id: it.id_menu || it.menu_id,
+                name: it.nama_menu || it.menu_name,
+                price: Number(it.harga || it.price),
+                qty: it.kuantitas || it.quantity,
+                note: it.catatan || it.notes || '',
+                image: it.menu?.foto_menu || it.menu?.image_path || 'hero.jpg',
+            })),
+            fee: Number(o.biaya_pengiriman ?? o.delivery_fee ?? 0),
+            payment: o.status_pembayaran || o.payment_status || 'Menunggu pembayaran',
+            status: Number(o.status_pesanan ?? o.order_status ?? 0),
+            proof: o.payment?.bukti_transfer || o.payment?.proof_image || null,
+            rejection: o.payment?.catatan_penolakan || o.payment?.rejection_note || null,
+        };
+    }
+    const id=new URLSearchParams(location.search).get('id');
+    return orders.find(o=>o.id===id)||orders.find(o=>o.email===(user?.email||'siti@contoh.test'))||null;
+}
 function payment(){const o=selectedOrder();if(!o)return `<div class="container page-content">${empty('Belum ada pesanan','Buat pesanan sebelum mengunggah bukti transfer.','/menu','Pilih menu')}</div>`;return `<div class="container page-content">${heading('Selesaikan pembayaran','Transfer sesuai tagihan, lalu kirim bukti untuk diperiksa admin.')} ${steps(2)}<div class="notice">${badge(o.payment)} <span>${esc(o.id)} · Nomor rekening belum tersedia. Jangan melakukan transfer.</span></div><div class="two-column"><div><section class="panel form-panel"><h2>Transfer bank</h2><p>Pilih salah satu rekening tujuan berikut.</p><div class="bank-grid">${[['BCA','000 123 4567'],['Mandiri','000 987 654 3210']].map(([b,n])=>`<div class="bank"><strong>${b}</strong><small>Nomor rekening belum tersedia</small></div>`).join('')}</div></section><form id="payment-form" data-id="${o.id}" class="panel form-panel"><h2>Konfirmasi transfer</h2>${o.payment==='Ditolak'?`<p class="notice error">${esc(o.rejection||'Bukti belum sesuai. Periksa nominal dan unggah kembali bukti yang jelas.')}</p>`:''}<div class="form-grid"><label>Bank pengirim<input name="bank" placeholder="Contoh: BCA" required></label><label>Nama pemilik rekening<input name="holder" value="${esc(o.name)}" required></label><label>Nominal transfer<input type="number" name="amount" min="${total(o.items)+o.fee}" value="${total(o.items)+o.fee}" required></label><label>Tanggal transfer<input type="date" name="transferDate" max="${today()}" value="${today()}" required></label></div><label class="upload-area">${icon('bag')}<b>Pilih bukti transfer</b><span>JPG, PNG, atau PDF. Maksimal 2 MB.</span><input name="proof" type="file" accept="image/jpeg,image/png,application/pdf" required></label><div id="proof-preview"></div><p id="payment-error" class="form-error" role="alert"></p><button class="button full" type="submit" ${o.payment==='Lunas'?'disabled':''}>Kirim bukti pembayaran</button></form></div>${summary(o.items,o.fee,button('/lacak-pesanan?id='+o.id,'Lacak pesanan','outline full'))}</div></div>`;}
 function customerOrders(){return orders.filter(o=>o.email===(user?.email||'siti@contoh.test'));}
 function history(){const list=customerOrders();return `<div class="container page-content">${heading('Pesanan Anda','Dari dapur hingga meja makan, pantau semuanya di sini.',button('/menu','Pesan lagi'))}<div class="tabs history-tabs"><button data-action="history-filter" data-filter="all" aria-pressed="true">Semua pesanan</button><button data-action="history-filter" data-filter="active" aria-pressed="false">Sedang berjalan</button><button data-action="history-filter" data-filter="done" aria-pressed="false">Selesai</button></div><div id="history-list">${historyCards(list)}</div></div>`;}
@@ -83,7 +144,7 @@ document.addEventListener('click',async e=>{const el=e.target.closest('[data-act
  if(a==='qty'){cart[i].qty=Math.max(cart[i].min,cart[i].qty+Number(el.dataset.delta));persistCart();render();}
  if(a==='remove'){cart.splice(i,1);persistCart();render();toast('Menu dihapus dari keranjang.');}
  if(a==='password'){const input=el.previousElementSibling;input.type=input.type==='password'?'text':'password';el.textContent=input.type==='password'?'Lihat':'Sembunyikan';}
- if(a==='logout'){localStorage.removeItem('menteng-user');location.href='/';}
+ if(a==='logout'){const f=document.createElement('form');f.method='POST';f.action='/logout';f.innerHTML=`<input type="hidden" name="_token" value="${esc(sData.csrfToken||'')}">`;document.body.appendChild(f);localStorage.removeItem('menteng-user');f.submit();return;}
  if(a==='copy'){try{await navigator.clipboard.writeText(el.dataset.value);toast('Nomor rekening disalin.');}catch{toast('Nomor rekening: '+el.dataset.value);}}
  if(a==='history-filter'){document.querySelectorAll('[data-action="history-filter"]').forEach(b=>b.setAttribute('aria-pressed',b===el));$('#history-list').innerHTML=historyCards(customerOrders().filter(o=>el.dataset.filter==='all'||(el.dataset.filter==='done'?o.status===3:o.status<3)));}
  if(a==='print')window.print();
@@ -118,5 +179,7 @@ document.addEventListener('submit',async e=>{const f=e.target; e.preventDefault(
 });
 $('#modal').addEventListener('click',e=>{if(e.target===$('#modal')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
 header();render();
+if(sData.flash?.success){setTimeout(()=>toast(sData.flash.success),150);}
+if(sData.flash?.error){setTimeout(()=>toast(sData.flash.error),150);}
 })();
 

@@ -1,49 +1,74 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\HasLegacyColumns;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasLegacyColumns, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    public const LEGACY_MAP = [
+        'name' => 'nama', 'phone_number' => 'nomor_telepon', 'phone' => 'nomor_telepon',
+        'password' => 'kata_sandi', 'role' => 'peran', 'address' => 'alamat',
+        'is_active' => 'status_aktif',
+    ];
+
+    protected $table = 'pengguna';
+
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'nama', 'email', 'nomor_telepon', 'kata_sandi', 'peran',
+        'alamat', 'status_aktif', 'email_verified_at',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $attributes = ['peran' => 'customer', 'status_aktif' => true];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    protected $hidden = ['kata_sandi', 'remember_token'];
+
     protected function casts(): array
     {
         return [
+            'status_aktif' => 'boolean',
+            'kata_sandi' => 'hashed',
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
         ];
+    }
+
+    public function getAuthPasswordName(): string
+    {
+        return 'kata_sandi';
+    }
+
+    public function getAuthPassword(): string
+    {
+        return (string) $this->kata_sandi;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->peran === 'admin';
+    }
+
+    public function isCustomer(): bool
+    {
+        return $this->peran === 'customer';
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'id_pengguna');
+    }
+
+    public function cartItems(): HasMany
+    {
+        return $this->hasMany(CartItem::class, 'id_pengguna');
     }
 }
