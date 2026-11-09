@@ -28,7 +28,7 @@ class AuthController extends Controller
             session()->put('url.intended', $request->input('return'));
         }
 
-        return view('catering', ['page' => 'login']);
+        return view('auth.login', ['page' => 'login']);
     }
 
     public function login(LoginRequest $request): RedirectResponse
@@ -81,7 +81,7 @@ class AuthController extends Controller
             session()->put('url.intended', $request->input('return'));
         }
 
-        return view('catering', ['page' => 'register']);
+        return view('auth.register', ['page' => 'register']);
     }
 
     public function register(RegisterRequest $request): RedirectResponse

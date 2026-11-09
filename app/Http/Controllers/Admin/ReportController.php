@@ -57,7 +57,7 @@ class ReportController extends Controller
             return response()->json($data);
         }
 
-        return view('catering', array_merge(['page' => 'reports'], $data));
+        return view('admin.reports', array_merge(['page' => 'reports'], $data));
     }
 
     public function exportCsv(Request $request): StreamedResponse

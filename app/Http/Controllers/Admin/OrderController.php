@@ -44,7 +44,7 @@ class OrderController extends Controller
             return response()->json($orders);
         }
 
-        return view('catering', [
+        return view('admin.orders', [
             'page' => 'admin-orders',
             'orders' => $orders,
         ]);

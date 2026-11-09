@@ -39,7 +39,7 @@ class CustomerController extends Controller
             return response()->json($customers);
         }
 
-        return view('catering', [
+        return view('admin.customers', [
             'page' => 'customers',
             'customers' => $customers,
             'orders' => Order::with(['items', 'payment'])->orderByDesc('created_at')->get(),

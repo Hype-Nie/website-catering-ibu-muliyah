@@ -36,7 +36,7 @@ class PaymentController extends Controller
             $order = $query->first();
         }
 
-        return view('catering', [
+        return view('pages.payment', [
             'page' => 'payment',
             'order' => $order,
         ]);

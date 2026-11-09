@@ -16,7 +16,7 @@ use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 // Public & Customer Routes
-Route::view('/', 'catering', ['page' => 'home'])->name('home');
+Route::view('/', 'pages.home', ['page' => 'home'])->name('home');
 
 Route::get('/menu', [MenuController::class, 'index'])->name('catalog');
 Route::get('/menu/{id}', [MenuController::class, 'show'])->name('menu.show');

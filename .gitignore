@@ -25,3 +25,4 @@ Thumbs.db
 /.tmp
 /test-results/
 /playwright-report/
+/docs/

@@ -41,7 +41,7 @@ class OrderTrackingController extends Controller
             return response()->json($orders);
         }
 
-        return view('catering', [
+        return view('pages.history', [
             'page' => 'history',
             'orders' => $orders,
         ]);
@@ -72,7 +72,7 @@ class OrderTrackingController extends Controller
                         return response()->json(['message' => 'Verifikasi nomor telepon penerima diperlukan untuk melacak pesanan.'], 403);
                     }
 
-                    return view('catering', [
+                    return view('pages.tracking', [
                         'page' => 'tracking',
                         'order' => null,
                         'error' => 'Verifikasi nomor telepon penerima diperlukan untuk melacak pesanan.',
@@ -107,7 +107,7 @@ class OrderTrackingController extends Controller
             $orders = $ordersQuery->limit(10)->get();
         }
 
-        return view('catering', [
+        return view('pages.tracking', [
             'page' => 'tracking',
             'order' => $order,
             'orders' => $orders,

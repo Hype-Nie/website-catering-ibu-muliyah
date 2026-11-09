@@ -38,7 +38,7 @@ class MenuController extends Controller
             ]);
         }
 
-        return view('catering', [
+        return view('pages.catalog', [
             'page' => 'catalog',
             'categories' => $categories,
             'menus' => $query->orderBy('harga')->get(),

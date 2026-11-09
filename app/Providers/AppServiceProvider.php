@@ -48,7 +48,7 @@ class AppServiceProvider extends ServiceProvider
             };
         });
 
-        View::composer('catering', function ($view) {
+        View::composer(['pages.home', 'pages.catalog', 'pages.cart', 'pages.checkout', 'pages.payment', 'pages.history', 'pages.tracking', 'auth.login', 'auth.register', 'admin.dashboard', 'admin.menu', 'admin.orders', 'admin.customers', 'admin.reports'], function ($view) {
             $data = $view->getData();
             if (! isset($data['kitchen'])) {
                 $view->with('kitchen', [

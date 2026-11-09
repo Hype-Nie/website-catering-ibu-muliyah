@@ -1,0 +1,9 @@
+function orderTable(list, report = false) {
+  return `<div class="table-scroll"><table><thead><tr>${["Pesanan", "Pelanggan", report ? "Porsi" : "Jadwal", "Total tagihan", "Pembayaran", "Status", ...report ? [] : ["Aksi"]].map((s) => `<th scope="col">${s}</th>`).join("")}</tr></thead><tbody>${list.map((o) => `<tr><td><b>${esc(o.id)}</b><small>${date(o.date)}</small></td><td>${esc(o.name)}</td><td>${report ? o.items.reduce((a, x) => a + x.qty, 0) : date(o.deliveryDate)}</td><td class="numeric nowrap">${money(total(o.items) + o.fee)}</td><td>${badge(o.payment)}</td><td>${badge(states[o.status])}</td>${report ? "" : `<td><button class="text-button" data-action="order-detail" data-id="${o.id}">Detail</button></td>`}</tr>`).join("") || '<tr><td colspan="7" class="table-empty">Tidak ada pesanan yang sesuai filter.</td></tr>'}</tbody></table></div>`;
+}
+
+function metrics(list) {
+  const paid = list.filter((o) => o.payment === "Lunas");
+  const rev = (page === "reports" ? paid.reduce((a, o) => a + total(o.items) + o.fee, 0) : sData.totalRevenue) || paid.reduce((a, o) => a + total(o.items) + o.fee, 0), ordCount = (page === "reports" ? list.length : sData.totalOrders) || list.length, pCount = sData.pendingVerifications ?? list.filter((o) => o.payment === "Menunggu verifikasi").length;
+  return `<div class="metrics"><article><span>${icon("chart")}Omzet terverifikasi</span><strong>${money(rev)}</strong><small>Dari pembayaran yang telah diperiksa</small></article><article><span>${icon("bag")}Total pesanan</span><strong>${ordCount}</strong><small>Seluruh status pesanan</small></article><article><span>${icon(page === "reports" ? "users" : "clock")}${page === "reports" ? "Porsi terjual" : "Menunggu verifikasi"}</span><strong>${page === "reports" ? paid.reduce((a, o) => a + o.items.reduce((n, x) => n + x.qty, 0), 0) : pCount}</strong><small>${page === "reports" ? "Dari pembayaran terverifikasi" : "Bukti transfer perlu diperiksa"}</small></article></div>`;
+}

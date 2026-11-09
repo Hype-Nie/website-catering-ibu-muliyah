@@ -35,6 +35,6 @@ class DashboardController extends Controller
             return response()->json($metrics);
         }
 
-        return view('catering', array_merge(['page' => 'dashboard'], $metrics));
+        return view('admin.dashboard', array_merge(['page' => 'dashboard'], $metrics));
     }
 }

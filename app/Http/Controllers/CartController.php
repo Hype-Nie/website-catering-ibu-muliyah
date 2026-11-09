@@ -39,7 +39,7 @@ class CartController extends Controller
             ]);
         }
 
-        return view('catering', [
+        return view('pages.cart', [
             'page' => 'cart',
             'items' => $cartItems,
             'subtotal' => $subtotal,

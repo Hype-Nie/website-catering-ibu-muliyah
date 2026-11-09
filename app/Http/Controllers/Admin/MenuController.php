@@ -25,7 +25,7 @@ class MenuController extends Controller
             return response()->json(['menus' => $menus, 'categories' => $categories]);
         }
 
-        return view('catering', [
+        return view('admin.menu', [
             'page' => 'admin-menu',
             'menus' => $menus,
             'categories' => $categories,

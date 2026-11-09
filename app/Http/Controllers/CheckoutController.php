@@ -75,7 +75,7 @@ class CheckoutController extends Controller
             }
         }
 
-        return view('catering', [
+        return view('pages.checkout', [
             'page' => 'checkout',
             'items' => $cartItems,
             'subtotal' => $subtotal,

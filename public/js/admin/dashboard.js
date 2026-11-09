@@ -1,0 +1,5 @@
+function dashboard() {
+  const pCount = sData.pendingVerifications ?? orders.filter((o) => o.payment === "Menunggu verifikasi").length;
+  return `<div class="admin-content">${heading("Selamat datang di dapur.", "Berikut ringkasan pesanan dan aktivitas usaha Anda.", `<span class="date-chip">${icon("clock")} ${date(today())}</span>`)}${metrics(orders)}${pCount > 0 ? `<div class="notice action-notice"><div>${icon("bag")}<span><b>${pCount} pembayaran menunggu pemeriksaan</b><small>Periksa bukti transfer sebelum pesanan disiapkan dapur.</small></span></div>${button("/admin/pesanan", "Periksa pembayaran", "small")}</div>` : ""}<section class="panel table-panel"><div class="panel-heading"><h2>Pesanan terbaru</h2><a href="/admin/pesanan" class="plain-link">Semua pesanan</a></div>${orderTable(orders.slice(0, 5))}</section><section class="panel chart-panel"><div class="panel-heading"><div><h2>Aktivitas dapur</h2><p>Pesanan yang perlu disiapkan dalam waktu dekat</p></div></div>${orderTable(orders.filter((o) => o.status === 1).slice(0, 4))}</section></div>`;
+}
+window.CateringPages["dashboard"] = { render: dashboard };
