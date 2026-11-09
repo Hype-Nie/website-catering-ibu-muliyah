@@ -44,11 +44,11 @@ class HaversineDistanceService
             return 0.0;
         }
 
-        if ($distanceKm <= 5.0) {
-            return 15000.0;
+        if ($distanceKm <= 1.0) {
+            return 5000.0;
         }
 
-        return 15000.0 + (ceil($distanceKm - 5.0) * 2000.0);
+        return 5000.0 + (ceil($distanceKm - 1.0) * 2000.0);
     }
 
     public function validateRadius(float $distanceKm, string $deliveryType = 'delivery'): void

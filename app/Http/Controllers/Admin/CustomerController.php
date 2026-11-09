@@ -16,7 +16,7 @@ class CustomerController extends Controller
     public function index(Request $request): View|JsonResponse
     {
         $customers = User::where('peran', 'customer')
-            ->with(['orders.items'])
+            ->with(['orders.items', 'orders.payment'])
             ->orderBy('nama')
             ->get()
             ->map(function (User $user) {
@@ -42,6 +42,7 @@ class CustomerController extends Controller
         return view('catering', [
             'page' => 'customers',
             'customers' => $customers,
+            'orders' => Order::with(['items', 'payment'])->orderByDesc('created_at')->get(),
         ]);
     }
 

@@ -74,6 +74,32 @@ class AuthTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_login_fails_with_invalid_credentials_and_retains_email(): void
+    {
+        User::create([
+            'nama' => 'Pelanggan Tes',
+            'email' => 'pelanggan@contoh.test',
+            'nomor_telepon' => '081234567890',
+            'kata_sandi' => Hash::make('secret123'),
+            'peran' => 'customer',
+            'status_aktif' => true,
+        ]);
+
+        $response = $this->from('/login')->post('/login', [
+            'email' => 'pelanggan@contoh.test',
+            'password' => 'wrongpassword',
+        ]);
+
+        $response->assertRedirect('/login');
+        $response->assertSessionHasErrors('email');
+        $this->assertEquals('pelanggan@contoh.test', session()->getOldInput('email'));
+        $this->assertGuest();
+
+        $loginPage = $this->get('/login');
+        $loginPage->assertSee('pelanggan@contoh.test');
+        $loginPage->assertSee('Email atau kata sandi tidak sesuai.');
+    }
+
     public function test_admin_login_redirects_to_admin_dashboard(): void
     {
         $admin = User::create([

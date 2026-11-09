@@ -202,5 +202,59 @@ test.describe.serial('Catering E2E Lifecycle Flow', () => {
     await expect(details).toContainText('Siti Rahma');
     await expect(details).toContainText('081234567890');
     await expect(details).toContainText('Jl. Teuku Umar No. 15');
+
+    // Verify 'Lacak pesanan lain' button is present
+    const trackOtherBtn = page.locator('a.track-other-btn').first();
+    await expect(trackOtherBtn).toBeVisible();
+    await expect(trackOtherBtn).toContainText('Lacak pesanan lain');
+  });
+
+  test('6. Authenticated user navigates to /lacak-pesanan: shows search box, quick selector, and no auto-order', async ({ page }) => {
+    await loginAsCustomer(page);
+
+    // Click 'Lacak pesanan' in navigation
+    await page.click('nav a[href="/lacak-pesanan"]');
+    await expect(page).toHaveURL('/lacak-pesanan');
+
+    // Order must NOT be automatically displayed; search box MUST be visible
+    await expect(page.locator('.tracking-panel')).not.toBeVisible();
+    const searchBox = page.locator('.tracking-search-box');
+    await expect(searchBox).toBeVisible();
+    await expect(searchBox.locator('h2')).toContainText('Cari status pesanan');
+
+    // Order ID input must be visible and required
+    const orderInput = searchBox.locator('input[name="order_id"]');
+    await expect(orderInput).toBeVisible();
+    await expect(orderInput).toHaveAttribute('required', '');
+
+    // Phone number input must NOT be present for authenticated user
+    await expect(searchBox.locator('input[name="phone"]')).toHaveCount(0);
+
+    // Quick dropdown / selector must be present for authenticated user with orders
+    const quickSelect = page.locator('#quick-order-select');
+    await expect(quickSelect).toBeVisible();
+    await expect(quickSelect.locator('option')).not.toHaveCount(0);
+
+    // Quick chips of recent orders must be present
+    const quickChips = page.locator('.quick-order-chips a');
+    await expect(quickChips.first()).toBeVisible();
+    await expect(quickChips.first()).toContainText(createdOrderId);
+
+    // Test picking order via dropdown selector
+    await quickSelect.selectOption(createdOrderId);
+    await expect(page).toHaveURL(new RegExp('/lacak-pesanan\\?id=' + createdOrderId));
+    await expect(page.locator('.tracking-id-row h2')).toContainText(createdOrderId);
+
+    // Click 'Lacak pesanan lain' button to return to search form
+    await page.locator('a.track-other-btn').first().click();
+    await expect(page).toHaveURL('/lacak-pesanan');
+    await expect(page.locator('.tracking-panel')).not.toBeVisible();
+    await expect(page.locator('.tracking-search-box')).toBeVisible();
+
+    // Test typing order number and submitting search form
+    await page.fill('#tracking-order-input', createdOrderId);
+    await page.click('#tracking-search-form button[type="submit"]');
+    await expect(page).toHaveURL(new RegExp('/lacak-pesanan\\?id=' + createdOrderId));
+    await expect(page.locator('.tracking-id-row h2')).toContainText(createdOrderId);
   });
 });

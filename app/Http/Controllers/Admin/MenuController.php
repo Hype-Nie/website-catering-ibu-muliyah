@@ -34,7 +34,11 @@ class MenuController extends Controller
 
     public function store(MenuRequest $request): RedirectResponse|JsonResponse
     {
-        $imagePath = 'satuan.jpg';
+        $categorySlug = (string) ($request->input('jenis_paket') ?? $request->input('package_type') ?? 'satuan');
+        $defaultImages = ['satuan' => 'satuan.jpg', 'box' => 'box.jpg', 'prasmanan' => 'prasmanan.jpg'];
+        $preset = $request->input('preset_image') ?? $request->input('foto_menu') ?? $request->input('image');
+        $imagePath = (is_string($preset) && ! empty($preset)) ? $preset : ($defaultImages[$categorySlug] ?? 'satuan.jpg');
+
         $file = $request->file('foto_menu') ?? $request->file('image');
         if ($file) {
             $filename = Str::random(40).'.'.$file->extension();
@@ -85,8 +89,9 @@ class MenuController extends Controller
         if ($file) {
             $filename = Str::random(40).'.'.$file->extension();
             $data['foto_menu'] = $file->storeAs('menus', $filename, 'public');
+        } elseif ($request->filled('preset_image')) {
+            $data['foto_menu'] = (string) $request->input('preset_image');
         }
-
         $menu->update($data);
 
         if ($request->wantsJson()) {

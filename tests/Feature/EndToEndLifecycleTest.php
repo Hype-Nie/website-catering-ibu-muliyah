@@ -138,8 +138,8 @@ class EndToEndLifecycleTest extends TestCase
         $this->assertNotNull($order);
         $this->assertMatchesRegularExpression('/^DM-\d{6}-\d{4}$/', $order->nomor_pesanan);
         $this->assertEquals(125000, (float) $order->subtotal);
-        $this->assertEquals(15000, (float) $order->biaya_pengiriman); // 3km base fee
-        $this->assertEquals(140000, (float) $order->total_pembayaran);
+        $this->assertEquals(11000, (float) $order->biaya_pengiriman); // 3.004km: 5000 + ceil(2.004)*2000
+        $this->assertEquals(136000, (float) $order->total_pembayaran);
         $this->assertEquals(Order::PAYMENT_PENDING, $order->status_pembayaran);
         $this->assertDatabaseCount('item_pesanan', 1);
         $this->assertDatabaseCount('item_keranjang', 0); // Cart emptied!
@@ -157,7 +157,7 @@ class EndToEndLifecycleTest extends TestCase
             'id_pesanan' => $order->id,
             'nama_bank' => 'BCA',
             'nama_pemilik_rekening' => 'Fajar Pratama',
-            'nominal_transfer' => 140000,
+            'nominal_transfer' => 136000,
             'tanggal_transfer' => Carbon::today()->toDateString(),
             'bukti_transfer' => $file,
         ]);
@@ -167,7 +167,7 @@ class EndToEndLifecycleTest extends TestCase
         $this->assertDatabaseHas('pembayaran', [
             'id_pesanan' => $order->id,
             'nama_bank' => 'BCA',
-            'nominal_transfer' => 140000,
+            'nominal_transfer' => 136000,
             'status_verifikasi' => Payment::STATUS_VERIFYING,
         ]);
 

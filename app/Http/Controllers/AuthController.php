@@ -47,7 +47,7 @@ class AuthController extends Controller
 
         if (! Auth::attempt($credentials, true)) {
             return back()->withInput($request->only('email'))->withErrors([
-                'email' => 'Email atau password yang Anda masukkan salah.',
+                'email' => 'Email atau kata sandi tidak sesuai.',
             ]);
         }
 
@@ -78,9 +78,10 @@ class AuthController extends Controller
 
         $user = User::create([
             'nama' => $request->input('nama') ?? $request->input('name'),
-            'email' => strtolower(trim($request->input('email'))),
-            'nomor_telepon' => trim((string) ($request->input('nomor_telepon') ?? $request->input('phone_number'))),
+            'email' => strtolower(trim((string) $request->input('email'))),
+            'nomor_telepon' => trim((string) ($request->input('nomor_telepon') ?? $request->input('phone_number') ?? $request->input('phone') ?? '')),
             'kata_sandi' => Hash::make((string) ($request->input('kata_sandi') ?? $request->input('password'))),
+            'alamat' => $request->input('alamat') ?? $request->input('address'),
             'peran' => 'customer',
             'status_aktif' => true,
         ]);

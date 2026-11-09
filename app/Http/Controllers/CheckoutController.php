@@ -43,11 +43,40 @@ class CheckoutController extends Controller
         }
 
         $subtotal = $cartItems->sum(fn ($item) => $item->subtotal);
+        $defaultLocation = null;
+        if (Auth::check()) {
+            $user = Auth::user();
+            /** @var Order|null $latestOrder */
+            $latestOrder = Order::where('id_pengguna', $user->id)
+                ->whereNotNull('latitude_pengiriman')
+                ->whereNotNull('longitude_pengiriman')
+                ->latest('id')
+                ->first();
+
+            if ($latestOrder) {
+                $defaultLocation = [
+                    'address' => $latestOrder->alamat_pengiriman,
+                    'latitude' => (float) $latestOrder->latitude_pengiriman,
+                    'longitude' => (float) $latestOrder->longitude_pengiriman,
+                    'distance_km' => (float) $latestOrder->jarak_pengiriman_km,
+                    'source' => 'latest_order',
+                ];
+            } elseif (! empty($user->alamat)) {
+                $defaultLocation = [
+                    'address' => $user->alamat,
+                    'latitude' => null,
+                    'longitude' => null,
+                    'distance_km' => null,
+                    'source' => 'profile_address',
+                ];
+            }
+        }
 
         return view('catering', [
             'page' => 'checkout',
             'items' => $cartItems,
             'subtotal' => $subtotal,
+            'defaultLocation' => $defaultLocation,
             'kitchen' => [
                 'name' => config('catering.kitchen.name', 'Dapur Pusat Menteng'),
                 'address' => config('catering.kitchen.address', 'Jl. Menteng No. 10, Jakarta Pusat'),
@@ -149,6 +178,19 @@ class CheckoutController extends Controller
 
             return $order;
         });
+        if (Auth::check()) {
+            $authUser = Auth::user();
+            $updates = [];
+            if (empty($authUser->nomor_telepon) && $request->filled('recipient_phone')) {
+                $updates['nomor_telepon'] = (string) $request->input('recipient_phone');
+            }
+            if (empty($authUser->alamat) && $request->filled('delivery_address')) {
+                $updates['alamat'] = (string) $request->input('delivery_address');
+            }
+            if (! empty($updates)) {
+                $authUser->update($updates);
+            }
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

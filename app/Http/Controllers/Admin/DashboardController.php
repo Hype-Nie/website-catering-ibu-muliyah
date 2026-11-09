@@ -19,16 +19,16 @@ class DashboardController extends Controller
         $totalOrders = Order::count();
         $pendingVerifications = Order::where('status_pembayaran', Order::PAYMENT_VERIFYING)->count();
 
-        $recentOrders = Order::with(['items', 'payment'])
+        $orders = Order::with(['items', 'payment', 'user'])
             ->orderByDesc('created_at')
-            ->limit(5)
             ->get();
 
         $metrics = [
             'totalRevenue' => $totalRevenue,
             'totalOrders' => $totalOrders,
             'pendingVerifications' => $pendingVerifications,
-            'recentOrders' => $recentOrders,
+            'orders' => $orders,
+            'recentOrders' => $orders->take(5),
         ];
 
         if ($request->wantsJson()) {

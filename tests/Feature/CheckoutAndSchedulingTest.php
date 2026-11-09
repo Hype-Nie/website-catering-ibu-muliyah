@@ -119,8 +119,8 @@ class CheckoutAndSchedulingTest extends TestCase
         $order = Order::first();
         $this->assertNotNull($order);
         $this->assertEquals(50000.0, (float) $order->subtotal_amount); // 2 * 25000
-        $this->assertEquals(21000.0, (float) $order->delivery_fee);
-        $this->assertEquals(71000.0, (float) $order->total_amount);
+        $this->assertEquals(19000.0, (float) $order->delivery_fee);
+        $this->assertEquals(69000.0, (float) $order->total_amount);
         $this->assertEquals('Menunggu Pembayaran', $order->payment_status);
         $this->assertStringStartsWith('DM-', $order->order_number);
 
@@ -148,5 +148,51 @@ class CheckoutAndSchedulingTest extends TestCase
         $this->assertEquals('pickup', $order->delivery_type);
         $this->assertEquals(0.0, (float) $order->delivery_fee);
         $this->assertEquals(50000.0, (float) $order->total_amount);
+    }
+
+    public function test_checkout_view_injects_default_location_from_user_latest_order(): void
+    {
+        Order::create([
+            'nomor_pesanan' => 'DM-PREV-001',
+            'id_pengguna' => $this->user->id,
+            'tanggal_pesanan' => now(),
+            'tanggal_pengiriman' => Carbon::tomorrow()->toDateString(),
+            'waktu_pengiriman' => '11:00',
+            'jenis_pengiriman' => 'delivery',
+            'nama_penerima' => 'Budi Prior',
+            'nomor_telepon_penerima' => '081299990000',
+            'alamat_pengiriman' => 'Jl. Teuku Umar No. 10',
+            'latitude_pengiriman' => -6.1950,
+            'longitude_pengiriman' => 106.8320,
+            'jarak_pengiriman_km' => 1.2,
+            'subtotal' => 50000,
+            'biaya_pengiriman' => 7000,
+            'total_pembayaran' => 57000,
+            'status_pembayaran' => Order::PAYMENT_PAID,
+            'status_pesanan' => Order::STATUS_COMPLETED,
+        ]);
+
+        $response = $this->actingAs($this->user)->get('/checkout');
+        $response->assertOk();
+        $response->assertViewHas('defaultLocation', [
+            'address' => 'Jl. Teuku Umar No. 10',
+            'latitude' => -6.1950,
+            'longitude' => 106.8320,
+            'distance_km' => 1.2,
+            'source' => 'latest_order',
+        ]);
+    }
+
+    public function test_checkout_view_injects_default_location_from_profile_address_when_no_prior_orders(): void
+    {
+        $response = $this->actingAs($this->user)->get('/checkout');
+        $response->assertOk();
+        $response->assertViewHas('defaultLocation', [
+            'address' => 'Jl. Menteng No. 5',
+            'latitude' => null,
+            'longitude' => null,
+            'distance_km' => null,
+            'source' => 'profile_address',
+        ]);
     }
 }

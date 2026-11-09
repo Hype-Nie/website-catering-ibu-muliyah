@@ -40,6 +40,10 @@ test.describe.serial('Admin E2E Lifecycle Flow (Happy & Extreme Paths)', () => {
     // Logout customer
     await page.goto('/menu');
     await page.click('[data-action="logout"]');
+    const confirmBtn = page.locator('[data-action="confirm-logout"]');
+    if (await confirmBtn.isVisible({ timeout: 1500 }).catch(() => false)) {
+      await confirmBtn.click();
+    }
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -51,6 +55,10 @@ test.describe.serial('Admin E2E Lifecycle Flow (Happy & Extreme Paths)', () => {
     await expect(page.locator('.sidebar')).toBeVisible();
     await expect(page.locator('.sidebar-note')).toContainText('Dapur Menteng');
 
+    // Assert single logout CTA and no duplicate user-greeting in admin header
+    await expect(page.locator('.header-actions .logout-link')).toHaveCount(1);
+    await expect(page.locator('.header-actions .user-greeting')).toHaveCount(0);
+    await expect(page.locator('.header-actions')).toContainText('Admin dapur');
     // Assert real aggregated metrics cards
     const metrics = page.locator('.metrics article');
     await expect(metrics.nth(0)).toContainText('Omzet terverifikasi');
@@ -97,7 +105,7 @@ test.describe.serial('Admin E2E Lifecycle Flow (Happy & Extreme Paths)', () => {
 
     const nameInput = page.locator('#menu-form input[name="name"]');
     await nameInput.fill('');
-    await page.click('#menu-form button');
+    await page.click('#menu-form button[type="submit"]');
     // Modal stays open due to HTML5 validation on required field
     await expect(page.locator('#modal')).toBeVisible();
 
@@ -108,7 +116,9 @@ test.describe.serial('Admin E2E Lifecycle Flow (Happy & Extreme Paths)', () => {
     await page.fill('#menu-form input[name="min"]', '10');
     await page.fill('#menu-form input[name="price"]', '32000');
     await page.fill('#menu-form textarea[name="desc"]', 'Porsi komplit ayam bakar & tahu tempe untuk verifikasi E2E.');
-    await page.click('#menu-form button');
+    await expect(page.locator('#menu-form input[name="foto_menu"]')).toBeVisible();
+    await expect(page.locator('#menu-form select[name="image"]')).toHaveCount(0);
+    await page.click('#menu-form button[type="submit"]');
 
     await expect(page.locator('#toast')).toHaveClass(/show/);
     await expect(page.locator('#toast')).toContainText(/Menu (berhasil ditambahkan|disimpan)/i);
@@ -151,6 +161,18 @@ test.describe.serial('Admin E2E Lifecycle Flow (Happy & Extreme Paths)', () => {
     await expect(page.locator('#modal')).toBeVisible();
     await expect(page.locator('#modal-title')).toContainText(/DM-/);
 
+    // Verify thermal invoice modal and absence of redundant Tutup button
+    const invoiceBtn = page.locator('button[data-action="show-invoice"]');
+    if (await invoiceBtn.isVisible()) {
+      await invoiceBtn.click();
+      await expect(page.locator('.thermal-receipt')).toBeVisible();
+      await expect(page.locator('button[data-action="print-thermal"]')).toBeVisible();
+      await expect(page.locator('.receipt-modal-actions button[data-action="close"]')).toHaveCount(0);
+      await page.locator('.modal-close').click();
+      await expect(page.locator('#modal')).toBeHidden();
+      await detailBtn.click();
+      await expect(page.locator('#modal')).toBeVisible();
+    }
     // 4C. Extreme Path: Rejection reason required validation
     const rejectBtn = page.locator('button[data-action="reject"]');
     if (await rejectBtn.isVisible()) {

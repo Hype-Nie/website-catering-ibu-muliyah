@@ -92,9 +92,25 @@ class OrderTrackingController extends Controller
             return response()->json($order);
         }
 
+        $orders = null;
+        if (Auth::check()) {
+            /** @var User $user */
+            $user = Auth::user();
+            $ordersQuery = Order::with(['items', 'payment'])
+                ->orderByDesc('created_at');
+            if (! $user->isAdmin()) {
+                $ordersQuery->where(function ($q) use ($user) {
+                    $q->where('id_pengguna', $user->id)
+                        ->orWhere('email_penerima', $user->email);
+                });
+            }
+            $orders = $ordersQuery->limit(10)->get();
+        }
+
         return view('catering', [
             'page' => 'tracking',
             'order' => $order,
+            'orders' => $orders,
         ]);
     }
 }

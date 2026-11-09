@@ -47,17 +47,26 @@ class MenuRequest extends FormRequest
         $packageField = $this->has('jenis_paket') ? 'jenis_paket' : 'package_type';
         $minField = $this->has('minimal_pesanan') ? 'minimal_pesanan' : 'min_order';
         $availField = $this->has('status_tersedia') ? 'status_tersedia' : 'is_available';
-        $imageField = $this->hasFile('foto_menu') ? 'foto_menu' : 'image';
-
-        return [
+        $rules = [
             $catField => ['required', 'exists:kategori,id'],
             $nameField => ['required', 'string', 'max:150'],
             $descField => ['required', 'string', 'max:1000'],
             $priceField => ['required', 'numeric', 'min:1000'],
             $packageField => ['required', 'in:satuan,box,prasmanan'],
             $minField => ['required', 'integer', 'min:1'],
-            $imageField => ['nullable', 'file', 'mimes:jpeg,jpg,png', 'max:2048'],
+            'foto_menu' => ['nullable'],
+            'image' => ['nullable'],
+            'preset_image' => ['nullable', 'string', 'max:100'],
             $availField => ['nullable', 'boolean'],
         ];
+
+        if ($this->hasFile('foto_menu')) {
+            $rules['foto_menu'] = ['file', 'mimes:jpeg,jpg,png,webp', 'max:2048'];
+        }
+        if ($this->hasFile('image')) {
+            $rules['image'] = ['file', 'mimes:jpeg,jpg,png,webp', 'max:2048'];
+        }
+
+        return $rules;
     }
 }

@@ -128,4 +128,21 @@ class PaymentAndTrackingTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewHas('orders');
     }
+
+    public function test_authenticated_user_without_id_sees_tracking_search_page_with_recent_orders(): void
+    {
+        $response = $this->actingAs($this->user)->get('/lacak-pesanan');
+        $response->assertStatus(200);
+        $response->assertViewHas('order', null);
+        $response->assertViewHas('orders');
+        $this->assertCount(1, $response->viewData('orders'));
+    }
+
+    public function test_guest_without_id_sees_tracking_search_page_without_orders(): void
+    {
+        $response = $this->get('/lacak-pesanan');
+        $response->assertStatus(200);
+        $response->assertViewHas('order', null);
+        $response->assertViewHas('orders', null);
+    }
 }
