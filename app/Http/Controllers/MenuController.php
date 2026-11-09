@@ -19,10 +19,6 @@ class MenuController extends Controller
 
         $query = Menu::with('kategori')->available();
 
-        if ($selectedCategory) {
-            $query->byCategory((string) $selectedCategory);
-        }
-
         if ($search = $request->query('q')) {
             $searchTerm = '%'.trim((string) $search).'%';
             $query->where(function ($q) use ($searchTerm) {
@@ -31,19 +27,21 @@ class MenuController extends Controller
             });
         }
 
-        $menus = $query->orderBy('harga')->get();
-
         if ($request->wantsJson()) {
+            if ($selectedCategory) {
+                $query->byCategory((string) $selectedCategory);
+            }
+
             return response()->json([
                 'categories' => $categories,
-                'menus' => $menus,
+                'menus' => $query->orderBy('harga')->get(),
             ]);
         }
 
         return view('catering', [
             'page' => 'catalog',
             'categories' => $categories,
-            'menus' => $menus,
+            'menus' => $query->orderBy('harga')->get(),
             'selectedCategory' => $selectedCategory,
         ]);
     }

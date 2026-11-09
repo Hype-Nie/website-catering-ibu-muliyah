@@ -23,16 +23,19 @@ test.describe.serial('Catering E2E Lifecycle Flow', () => {
     await expect(page).toHaveTitle(/Pilihan menu/);
     await expect(page.locator('h1')).toContainText('Mau makan apa hari ini?');
 
-    // Filter by 'Nasi box'
+    // Filter by 'Nasi box' - ensure cards render dynamically without page reload
     await page.click('button[data-category="box"]');
     await expect(page).toHaveURL(/kategori=box/);
     await expect(page.locator('button[data-category="box"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.menu-card').first()).toBeVisible();
+    await expect(page.locator('.menu-card')).not.toHaveCount(0);
 
-    // Filter by 'Prasmanan'
+    // Filter by 'Prasmanan' - ensure cards render dynamically without page reload
     await page.click('button[data-category="prasmanan"]');
     await expect(page).toHaveURL(/kategori=prasmanan/);
     await expect(page.locator('button[data-category="prasmanan"]')).toHaveAttribute('aria-pressed', 'true');
-    // Search filter
+    await expect(page.locator('.menu-card').first()).toBeVisible();
+    await expect(page.locator('.menu-card')).not.toHaveCount(0);
     await page.goto('/menu?kategori=satuan');
     await page.fill('#menu-search', 'Ayam');
     const filteredCards = page.locator('.menu-card');

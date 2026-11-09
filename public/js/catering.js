@@ -183,6 +183,7 @@ document.addEventListener('submit',async e=>{const f=e.target;
 });
 $('#modal').addEventListener('click',e=>{if(e.target===$('#modal')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
 $('#modal').addEventListener('close',()=>document.body.classList.remove('print-receipt'));
+window.addEventListener('popstate',()=>{if(page==='catalog'){activeCategory=new URLSearchParams(location.search).get('kategori')||'satuan';if(!cats[activeCategory])activeCategory='satuan';$('#main').innerHTML=catalog();}});
 header();render();
 if(sData.flash?.success){setTimeout(()=>toast(sData.flash.success),150);}
 if(sData.flash?.error&&!['login','register'].includes(page)){setTimeout(()=>toast(sData.flash.error),150);}
