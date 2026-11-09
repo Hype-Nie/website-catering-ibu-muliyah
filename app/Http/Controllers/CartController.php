@@ -75,6 +75,11 @@ class CartController extends Controller
             ]);
         }
 
+        if (! Auth::check()) {
+            session()->put('guest_cart_active', true);
+            session()->save();
+        }
+
         if ($request->wantsJson()) {
             $cartItems = $this->getCartQuery()->with('menu')->get();
 

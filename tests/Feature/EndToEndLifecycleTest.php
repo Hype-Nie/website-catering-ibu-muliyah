@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\CartItem;
 use App\Models\Category;
 use App\Models\Menu;
 use App\Models\Order;
@@ -84,6 +85,7 @@ class EndToEndLifecycleTest extends TestCase
 
     public function test_full_happy_path_from_catalog_to_cart_checkout_payment_tracking_and_admin_verification(): void
     {
+
         $guestSessionData = ['id' => 'guest-fixed-session-id-12345678901234567890'];
 
         // 1. Guest visits catalog
@@ -113,15 +115,46 @@ class EndToEndLifecycleTest extends TestCase
         $this->assertCount(1, $cartPageResponse->viewData('items'));
         $this->assertEquals(125000, $cartPageResponse->viewData('subtotal'));
 
-        // 4. Guest navigates to /checkout, items are present, no empty cart redirect!
-        $checkoutPageResponse = $this->withSession($guestSessionData)->get('/checkout');
+        // 4. Guest navigates to /checkout -> redirected to login because auth is required for checkout
+        $checkoutRedirectResponse = $this->withSession($guestSessionData)->get('/checkout');
+        $checkoutRedirectResponse->assertRedirect(route('login'));
+
+        // 4b. Guest creates account (registers) to proceed with checkout
+        $customer = User::create([
+            'nama' => 'Fajar Pratama',
+            'email' => 'fajar@contoh.test',
+            'nomor_telepon' => '081234567890',
+            'kata_sandi' => Hash::make('password123'),
+            'peran' => 'customer',
+            'alamat' => 'Jl. Cikini Raya No. 20, Menteng, Jakarta Pusat',
+            'status_aktif' => true,
+        ]);
+
+        // When logging in, guest cart items migrate to authenticated customer
+        $loginResponse = $this->withSession($guestSessionData)->post('/login', [
+            'email' => 'fajar@contoh.test',
+            'password' => 'password123',
+            'return' => route('checkout.index'),
+        ]);
+        $loginResponse->assertRedirect(route('checkout.index'));
+        $this->assertAuthenticatedAs($customer);
+
+        // Cart items must now belong to customer id
+        $this->assertDatabaseHas('item_keranjang', [
+            'id_pengguna' => $customer->id,
+            'id_menu' => $this->satuanMenu->id,
+            'kuantitas' => 5,
+        ]);
+
+        // 4c. Authenticated customer visits /checkout, items are present!
+        $checkoutPageResponse = $this->actingAs($customer)->get('/checkout');
         $checkoutPageResponse->assertOk();
         $checkoutPageResponse->assertViewHas('items');
         $this->assertCount(1, $checkoutPageResponse->viewData('items'));
 
-        // 5. Guest submits checkout for delivery tomorrow at 3 km distance
+        // 5. Customer submits checkout for delivery tomorrow at 3 km distance
         $tomorrow = Carbon::now('Asia/Jakarta')->addDay()->toDateString();
-        $checkoutResponse = $this->withSession($guestSessionData)->post('/checkout', [
+        $checkoutResponse = $this->actingAs($customer)->post('/checkout', [
             'name' => 'Fajar Pratama',
             'phone' => '081234567890',
             'email' => 'fajar@contoh.test',
@@ -218,13 +251,26 @@ class EndToEndLifecycleTest extends TestCase
 
     public function test_extreme_boundary_empty_cart_checkout_prevented(): void
     {
-        // Visiting /checkout with empty cart redirects to catalog
-        $response = $this->get('/checkout');
+        // Visiting /checkout as unauthenticated guest redirects to login
+        $guestResponse = $this->get('/checkout');
+        $guestResponse->assertRedirect(route('login'));
+
+        $customer = User::create([
+            'nama' => 'Empty Cart Cust',
+            'email' => 'empty_cart@contoh.test',
+            'nomor_telepon' => '081299998888',
+            'kata_sandi' => Hash::make('password123'),
+            'peran' => 'customer',
+            'status_aktif' => true,
+        ]);
+
+        // Visiting /checkout with empty cart as logged in user redirects to catalog
+        $response = $this->actingAs($customer)->get('/checkout');
         $response->assertRedirect(route('catalog'));
         $response->assertSessionHas('error');
 
         // Posting /checkout with empty cart fails validation
-        $postResponse = $this->post('/checkout', [
+        $postResponse = $this->actingAs($customer)->post('/checkout', [
             'name' => 'Fajar',
             'phone' => '081234567890',
             'deliveryDate' => Carbon::now('Asia/Jakarta')->addDay()->toDateString(),
@@ -254,9 +300,17 @@ class EndToEndLifecycleTest extends TestCase
 
     public function test_extreme_boundary_preorder_h_minus_1_rejected_for_today_and_past(): void
     {
-        // Add valid item to cart with guest session
-        $sess = str_repeat('c', 40);
-        $this->withCookie($this->cookieName, $sess)->postJson('/keranjang', [
+        $customer = User::create([
+            'nama' => 'Fajar Customer',
+            'email' => 'fajar_preorder@contoh.test',
+            'nomor_telepon' => '081299991111',
+            'kata_sandi' => Hash::make('password123'),
+            'peran' => 'customer',
+            'status_aktif' => true,
+        ]);
+
+        CartItem::create([
+            'id_pengguna' => $customer->id,
             'id_menu' => $this->satuanMenu->id,
             'kuantitas' => 2,
         ]);
@@ -266,7 +320,7 @@ class EndToEndLifecycleTest extends TestCase
         $tomorrow = Carbon::now('Asia/Jakarta')->addDay()->toDateString();
 
         // Same-day order rejected
-        $todayResponse = $this->withCookie($this->cookieName, $sess)->post('/checkout', [
+        $todayResponse = $this->actingAs($customer)->post('/checkout', [
             'name' => 'Fajar',
             'phone' => '081234567890',
             'deliveryDate' => $today,
@@ -276,7 +330,7 @@ class EndToEndLifecycleTest extends TestCase
         $todayResponse->assertSessionHasErrors('delivery_date');
 
         // Past-date order rejected
-        $pastResponse = $this->withCookie($this->cookieName, $sess)->post('/checkout', [
+        $pastResponse = $this->actingAs($customer)->post('/checkout', [
             'name' => 'Fajar',
             'phone' => '081234567890',
             'deliveryDate' => $yesterday,
@@ -286,7 +340,7 @@ class EndToEndLifecycleTest extends TestCase
         $pastResponse->assertSessionHasErrors('delivery_date');
 
         // H-1 (tomorrow) accepted
-        $tomorrowResponse = $this->withCookie($this->cookieName, $sess)->post('/checkout', [
+        $tomorrowResponse = $this->actingAs($customer)->post('/checkout', [
             'name' => 'Fajar',
             'phone' => '081234567890',
             'deliveryDate' => $tomorrow,
@@ -299,9 +353,17 @@ class EndToEndLifecycleTest extends TestCase
 
     public function test_extreme_boundary_haversine_distance_strictly_enforced_at_20km(): void
     {
-        $distSess = str_repeat('d', 40);
-        // Add item
-        $this->withCookie($this->cookieName, $distSess)->postJson('/keranjang', [
+        $customer = User::create([
+            'nama' => 'Distance Cust',
+            'email' => 'dist_cust@contoh.test',
+            'nomor_telepon' => '081299992222',
+            'kata_sandi' => Hash::make('password123'),
+            'peran' => 'customer',
+            'status_aktif' => true,
+        ]);
+
+        CartItem::create([
+            'id_pengguna' => $customer->id,
             'id_menu' => $this->satuanMenu->id,
             'kuantitas' => 2,
         ]);
@@ -309,7 +371,7 @@ class EndToEndLifecycleTest extends TestCase
         $tomorrow = Carbon::now('Asia/Jakarta')->addDay()->toDateString();
 
         // Radius outside 20 km (e.g. 25 km option)
-        $outsideResponse = $this->withCookie($this->cookieName, $distSess)->post('/checkout', [
+        $outsideResponse = $this->actingAs($customer)->post('/checkout', [
             'name' => 'Fajar',
             'phone' => '081234567890',
             'deliveryDate' => $tomorrow,
@@ -321,7 +383,7 @@ class EndToEndLifecycleTest extends TestCase
         $outsideResponse->assertSessionHasErrors('delivery_type');
 
         // Radius within 20 km (e.g. 15 km option) succeeds
-        $insideResponse = $this->withCookie($this->cookieName, $distSess)->post('/checkout', [
+        $insideResponse = $this->actingAs($customer)->post('/checkout', [
             'name' => 'Fajar',
             'phone' => '081234567890',
             'deliveryDate' => $tomorrow,

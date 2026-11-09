@@ -25,9 +25,15 @@ Route::get('/keranjang', [CartController::class, 'index'])->name('cart.index');
 Route::post('/keranjang', [CartController::class, 'store'])->name('cart.store');
 Route::put('/keranjang/{id}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/keranjang/{id}', [CartController::class, 'destroy'])->name('cart.destroy');
+Route::get('/cart', [CartController::class, 'index']);
+Route::post('/cart', [CartController::class, 'store']);
+Route::put('/cart/{id}', [CartController::class, 'update']);
+Route::delete('/cart/{id}', [CartController::class, 'destroy']);
 
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
+Route::middleware('auth')->group(function () {
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
+});
 
 Route::get('/pembayaran', [PaymentController::class, 'show'])->name('payment.show');
 Route::post('/pembayaran', [PaymentController::class, 'upload'])->name('payment.upload');

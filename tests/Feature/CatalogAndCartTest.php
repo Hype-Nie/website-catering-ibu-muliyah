@@ -152,4 +152,29 @@ class CatalogAndCartTest extends TestCase
         $deleteResponse->assertRedirect('/keranjang');
         $this->assertDatabaseMissing('item_keranjang', ['id' => $item->id]);
     }
+
+    public function test_guest_can_add_item_to_cart_and_view_cart_without_login(): void
+    {
+        $cookieName = (string) config('session.cookie');
+        $guestSess = str_repeat('e', 40);
+
+        $response = $this->withCookie($cookieName, $guestSess)->post('/keranjang', [
+            'menu_id' => $this->menuSatuan->id,
+            'quantity' => 2,
+            'notes' => 'Pesanan tamu',
+        ]);
+
+        $response->assertRedirect('/keranjang');
+        $this->assertDatabaseHas('item_keranjang', [
+            'id_pengguna' => null,
+            'id_menu' => $this->menuSatuan->id,
+            'kuantitas' => 2,
+            'catatan' => 'Pesanan tamu',
+        ]);
+
+        $viewResponse = $this->withCookie($cookieName, $guestSess)->get('/keranjang');
+        $viewResponse->assertOk();
+        $viewResponse->assertViewHas('items');
+        $this->assertCount(1, $viewResponse->viewData('items'));
+    }
 }

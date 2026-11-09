@@ -16,12 +16,16 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function showLogin(): View|RedirectResponse
+    public function showLogin(Request $request): View|RedirectResponse
     {
         if (Auth::check()) {
             return Auth::user()->isAdmin()
                 ? redirect()->route('admin.dashboard')
                 : redirect()->route('catalog');
+        }
+
+        if ($request->has('return')) {
+            session()->put('url.intended', $request->input('return'));
         }
 
         return view('catering', ['page' => 'login']);
@@ -51,6 +55,10 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($request->filled('return')) {
+            session()->put('url.intended', $request->input('return'));
+        }
+
         $request->session()->regenerate();
         /** @var User $user */
         $user = Auth::user();
@@ -63,10 +71,14 @@ class AuthController extends Controller
         return redirect()->intended(route('catalog'));
     }
 
-    public function showRegister(): View|RedirectResponse
+    public function showRegister(Request $request): View|RedirectResponse
     {
         if (Auth::check()) {
             return redirect()->route('catalog');
+        }
+
+        if ($request->has('return')) {
+            session()->put('url.intended', $request->input('return'));
         }
 
         return view('catering', ['page' => 'register']);
@@ -87,10 +99,13 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
+        if ($request->filled('return')) {
+            session()->put('url.intended', $request->input('return'));
+        }
         $request->session()->regenerate();
         $this->migrateCart($guestSessionId, $user->id);
 
-        return redirect()->route('catalog')->with('success', 'Akun berhasil dibuat. Selamat datang di Dapur Menteng!');
+        return redirect()->intended(route('catalog'))->with('success', 'Akun berhasil dibuat. Selamat datang di Dapur Menteng!');
     }
 
     private function migrateCart(string $guestSessionId, int $userId): void

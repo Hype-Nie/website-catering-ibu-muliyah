@@ -195,4 +195,15 @@ class CheckoutAndSchedulingTest extends TestCase
             'source' => 'profile_address',
         ]);
     }
+
+    public function test_guest_cannot_access_checkout_and_is_redirected_to_login(): void
+    {
+        $response = $this->get('/checkout');
+        $response->assertRedirect(route('login'));
+
+        $postResponse = $this->post('/checkout', [
+            'recipient_name' => 'Guest',
+        ]);
+        $postResponse->assertRedirect(route('login'));
+    }
 }

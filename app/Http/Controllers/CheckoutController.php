@@ -36,8 +36,11 @@ class CheckoutController extends Controller
 
     public function index(Request $request): View|RedirectResponse
     {
-        $cartItems = $this->getCartItems();
+        if (! Auth::check()) {
+            return redirect()->guest(route('login'))->with('error', 'Silakan masuk atau daftar terlebih dahulu untuk melanjutkan checkout.');
+        }
 
+        $cartItems = $this->getCartItems();
         if ($cartItems->isEmpty()) {
             return redirect()->route('catalog')->with('error', 'Keranjang belanja masih kosong. Silakan pilih menu terlebih dahulu.');
         }
@@ -88,8 +91,15 @@ class CheckoutController extends Controller
 
     public function process(CheckoutRequest $request): RedirectResponse|JsonResponse
     {
-        $cartItems = $this->getCartItems();
+        if (! Auth::check()) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Silakan masuk atau daftar terlebih dahulu untuk melanjutkan checkout.'], 401);
+            }
 
+            return redirect()->guest(route('login'))->with('error', 'Silakan masuk atau daftar terlebih dahulu untuk melanjutkan checkout.');
+        }
+
+        $cartItems = $this->getCartItems();
         if ($cartItems->isEmpty()) {
             throw ValidationException::withMessages([
                 'cart' => 'Keranjang belanja Anda masih kosong.',
@@ -170,11 +180,8 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            if (Auth::check()) {
-                CartItem::where('id_pengguna', Auth::id())->delete();
-            } else {
-                CartItem::where('id_sesi', session()->getId())->delete();
-            }
+            CartItem::where('id_pengguna', Auth::id())->delete();
+            CartItem::where('id_sesi', session()->getId())->delete();
 
             return $order;
         });
