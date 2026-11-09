@@ -38,9 +38,9 @@ const tomorrow = () => {
 };
 const date = (s) => (/* @__PURE__ */ new Date(s + "T12:00:00")).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 const cats = { satuan: "Porsi satuan", box: "Nasi box", prasmanan: "Prasmanan" };
-const states = ["Menunggu pembayaran", "Diproses dapur", "Dikirim / siap diambil", "Selesai"];
+const states = ["Menunggu pembayaran", "Diproses dapur", "Dikirim / siap diambil", "Selesai", "Ditolak"];
 const customers = [{ name: "Siti Rahma", email: "siti@contoh.test", phone: "081234567890" }, { name: "Budi Santoso", email: "budi@contoh.test", phone: "081298765432" }, { name: "Dewi Lestari", email: "dewi@contoh.test", phone: "081355667788" }, { name: "Andi Pratama", email: "andi@contoh.test", phone: "081388990011" }];
-const seedOrders = [["0001", 0, 4, 10, "Menunggu verifikasi", 0], ["0002", 1, 7, 30, "Lunas", 1], ["0003", 2, 8, 30, "Lunas", 2], ["0004", 0, 1, 4, "Ditolak", 0], ["0005", 0, 4, 20, "Lunas", 3], ["0006", 1, 8, 40, "Lunas", 3]].map(([id, c, m, q, p, s], i) => {
+const seedOrders = [["0001", 0, 4, 10, "Menunggu verifikasi", 0], ["0002", 1, 7, 30, "Lunas", 1], ["0003", 2, 8, 30, "Lunas", 2], ["0004", 0, 1, 4, "Ditolak", 4], ["0005", 0, 4, 20, "Lunas", 3], ["0006", 1, 8, 40, "Lunas", 3]].map(([id, c, m, q, p, s], i) => {
   const menu = baseMenus.find((x) => x.id === m);
   return { id: "DM-261105-" + id, name: customers[c].name, email: customers[c].email, phone: customers[c].phone, date: "2026-11-" + String(5 - i % 5).padStart(2, "0"), deliveryDate: tomorrow(), time: "10:00", method: "delivery", address: "Jl. Cikini Raya No. 12, Menteng, Jakarta Pusat", items: [{ ...menu, qty: q, note: "Sambal dipisah" }], fee: 15e3, payment: p, status: s, proof: p === "Menunggu verifikasi" ? "bukti-transfer-contoh.png" : null };
 });

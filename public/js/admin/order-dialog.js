@@ -70,6 +70,7 @@ document.addEventListener("submit", async (e) => {
       const res = await r.json();
       if (r.ok) {
         o.payment = "Ditolak";
+        o.status = 4;
         o.rejection = reason;
         $("#modal").close();
         render();

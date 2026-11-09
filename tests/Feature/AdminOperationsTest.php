@@ -191,6 +191,8 @@ class AdminOperationsTest extends TestCase
         $this->payment->refresh();
 
         $this->assertEquals(Order::PAYMENT_REJECTED, $this->order->status_pembayaran);
+        $this->assertEquals(Order::STATUS_REJECTED, $this->order->status_pesanan);
+        $this->assertEquals('Ditolak', $this->order->status_label);
         $this->assertEquals(Payment::STATUS_REJECTED, $this->payment->status_verifikasi);
         $this->assertEquals('Nominal pada struk tidak terbaca dan tanggal buram.', $this->payment->catatan_penolakan);
     }

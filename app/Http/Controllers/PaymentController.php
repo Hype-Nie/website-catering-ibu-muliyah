@@ -81,6 +81,7 @@ class PaymentController extends Controller
 
         $order->update([
             'status_pembayaran' => Order::PAYMENT_VERIFYING,
+            'status_pesanan' => Order::STATUS_PENDING_PAYMENT,
         ]);
 
         if ($request->wantsJson()) {

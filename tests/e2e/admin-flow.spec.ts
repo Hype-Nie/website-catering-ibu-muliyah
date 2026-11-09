@@ -66,9 +66,14 @@ test.describe.serial('Admin E2E Lifecycle Flow (Happy & Extreme Paths)', () => {
     await expect(metrics.nth(2)).toContainText('Menunggu verifikasi');
 
     // Assert quick action and recent orders table
-    await expect(page.locator('.action-notice')).toBeVisible();
+    const pendingText = await metrics.nth(2).locator('strong').textContent();
+    const pendingCount = parseInt(pendingText || '0', 10);
+    if (pendingCount > 0) {
+      await expect(page.locator('.action-notice')).toBeVisible();
+    } else {
+      await expect(page.locator('.action-notice')).toHaveCount(0);
+    }
     await expect(page.locator('h2:has-text("Pesanan terbaru")')).toBeVisible();
-
     // Verify sidebar navigation links
     const sidebarNav = page.locator('.sidebar nav a');
     await expect(sidebarNav).toHaveCount(5);

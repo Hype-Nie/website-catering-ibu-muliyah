@@ -219,6 +219,7 @@
         "Diproses dapur",
         "Dikirim / siap diambil",
         "Selesai",
+        "Ditolak",
     ];
     const customers = [
         {
@@ -246,7 +247,7 @@
         ["0001", 0, 4, 10, "Menunggu verifikasi", 0],
         ["0002", 1, 7, 30, "Lunas", 1],
         ["0003", 2, 8, 30, "Lunas", 2],
-        ["0004", 0, 1, 4, "Ditolak", 0],
+        ["0004", 0, 1, 4, "Ditolak", 4],
         ["0005", 0, 4, 20, "Lunas", 3],
         ["0006", 1, 8, 40, "Lunas", 3],
     ].map(([id, c, m, q, p, s], i) => {
@@ -753,13 +754,14 @@
             o.payment === "Menunggu pembayaran" ||
             o.payment === "Menunggu Pembayaran" ||
             o.payment === "Ditolak" ||
+            o.status === 4 ||
             (o.status === 0 &&
                 ![
                     "Menunggu verifikasi",
                     "Menunggu Verifikasi",
                     "Lunas",
                 ].includes(o.payment));
-        return `<div class="container page-content">${heading("Kabar dari dapur", "Informasi dan perkembangan pesanan Anda.", `<div class="tracking-top-actions"><a href="/lacak-pesanan" class="button outline small track-other-btn">Lacak pesanan lain</a><button class="button outline small" data-action="show-invoice" data-id="${esc(o.id)}">${icon("check")} Cetak invoice (Struk)</button></div>`)}<div class="panel tracking-panel"><div class="panel-heading"><div class="tracking-id-group"><div class="tracking-id-row"><h2>${esc(o.id)}</h2><button type="button" class="button outline small copy-btn" data-copy="${esc(o.id)}" aria-label="Salin Nomor Pesanan">${icon("check")} Salin Nomor Pesanan</button></div><p>Dipesan ${date(o.date)} · ${esc(o.name)}</p></div>${badge(o.payment)}</div><ol class="tracking-steps">${trackingSteps.map((s, i) => `<li class="${i <= cur ? "complete" : ""} ${i === cur ? "current" : ""}"><span>${i < cur ? "✓" : i + 1}</span><b>${s}</b><small>${i < cur ? "Sudah selesai" : i === cur ? "Tahap saat ini" : "Belum dimulai"}</small></li>`).join("")}</ol>${needPay ? `<div class="tracking-cta-box"><div><strong>Pembayaran Belum Selesai</strong><p class="muted small-text">Segera lakukan transfer dan lampirkan bukti pembayaran agar pesanan dapat disiapkan.</p></div><a href="/pembayaran?id=${esc(o.id)}" class="button yellow tracking-pay-btn">Selesaikan pembayaran</a></div>` : ""}<div class="tracking-wa-bar"><span class="muted small-text">Pertanyaan terkait pesanan? Tim dapur siap membantu.</span><a href="https://wa.me/6281234567890?text=${encodeURIComponent("Halo Dapur Menteng, saya ingin menanyakan pesanan nomor " + o.id)}" target="_blank" rel="noopener" class="button outline small wa-btn">Hubungi WhatsApp Dapur Menteng</a></div></div><div class="two-column"><section class="panel form-panel"><h2>Penerima & pengiriman</h2><dl class="details-list">${[
+        return `<div class="container page-content">${heading("Kabar dari dapur", "Informasi dan perkembangan pesanan Anda.", `<div class="tracking-top-actions"><a href="/lacak-pesanan" class="button outline small track-other-btn">Lacak pesanan lain</a><button class="button outline small" data-action="show-invoice" data-id="${esc(o.id)}">${icon("check")} Cetak invoice (Struk)</button></div>`)}<div class="panel tracking-panel"><div class="panel-heading"><div class="tracking-id-group"><div class="tracking-id-row"><h2>${esc(o.id)}</h2><button type="button" class="button outline small copy-btn" data-copy="${esc(o.id)}" aria-label="Salin Nomor Pesanan">${icon("check")} Salin Nomor Pesanan</button></div><p>Dipesan ${date(o.date)} · ${esc(o.name)}</p></div>${badge(states[o.status] || o.payment)}</div>${(o.status === 4 || o.payment === "Ditolak") ? `<div class="notice error"><div><strong>Bukti Pembayaran Ditolak:</strong> <span>${esc(o.rejection || "Bukti transfer tidak sesuai. Silakan kirimkan ulang bukti yang valid pada halaman pembayaran.")}</span></div></div>` : ""}<ol class="tracking-steps">${trackingSteps.map((s, i) => `<li class="${i <= cur ? "complete" : ""} ${i === cur ? "current" : ""}"><span>${i < cur ? "✓" : i + 1}</span><b>${s}</b><small>${i < cur ? "Sudah selesai" : i === cur ? "Tahap saat ini" : "Belum dimulai"}</small></li>`).join("")}</ol>${needPay ? `<div class="tracking-cta-box"><div><strong>Pembayaran Belum Selesai</strong><p class="muted small-text">Segera lakukan transfer dan lampirkan bukti pembayaran agar pesanan dapat disiapkan.</p></div><a href="/pembayaran?id=${esc(o.id)}" class="button yellow tracking-pay-btn">Selesaikan pembayaran</a></div>` : ""}<div class="tracking-wa-bar"><span class="muted small-text">Pertanyaan terkait pesanan? Tim dapur siap membantu.</span><a href="https://wa.me/6281234567890?text=${encodeURIComponent("Halo Dapur Menteng, saya ingin menanyakan pesanan nomor " + o.id)}" target="_blank" rel="noopener" class="button outline small wa-btn">Hubungi WhatsApp Dapur Menteng</a></div></div><div class="two-column"><section class="panel form-panel"><h2>Penerima & pengiriman</h2><dl class="details-list">${[
             ["Nama", o.name],
             ["WhatsApp", o.phone],
             ["Jadwal", date(o.deliveryDate) + ", " + o.time],
@@ -2021,6 +2023,7 @@
                 const res = await r.json();
                 if (r.ok) {
                     o.payment = "Ditolak";
+                    o.status = 4;
                     o.rejection = reason;
                     $("#modal").close();
                     render();

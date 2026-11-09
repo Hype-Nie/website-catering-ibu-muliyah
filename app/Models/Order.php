@@ -22,7 +22,9 @@ class Order extends Model
 
     public const STATUS_COMPLETED = 3;
 
-    public const STATUS_CANCELLED = 4;
+    public const STATUS_REJECTED = 4;
+
+    public const STATUS_CANCELLED = 5;
 
     public const PAYMENT_PENDING = 'Menunggu Pembayaran';
 
@@ -33,7 +35,7 @@ class Order extends Model
     public const PAYMENT_REJECTED = 'Ditolak';
 
     public const ALLOWED_TRANSITIONS = [
-        0 => [1, 4], 1 => [2, 4], 2 => [3], 3 => [], 4 => [],
+        0 => [1, 4, 5], 1 => [2, 4, 5], 2 => [3], 3 => [], 4 => [0, 1], 5 => [],
     ];
 
     public const LEGACY_MAP = [
@@ -92,7 +94,8 @@ class Order extends Model
     {
         return match ($this->status_pesanan) {
             0 => 'Menunggu Pembayaran', 1 => 'Diproses Dapur',
-            2 => 'Dikirim / Siap Diambil', 3 => 'Selesai', 4 => 'Dibatalkan',
+            2 => 'Dikirim / Siap Diambil', 3 => 'Selesai', 4 => 'Ditolak',
+            5 => 'Dibatalkan',
             default => 'Status Tidak Diketahui',
         };
     }

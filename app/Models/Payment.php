@@ -73,6 +73,9 @@ class Payment extends Model
             'catatan_penolakan' => $note,
         ]);
 
-        $this->order->update(['status_pembayaran' => Order::PAYMENT_REJECTED]);
+        $this->order->update([
+            'status_pembayaran' => Order::PAYMENT_REJECTED,
+            'status_pesanan' => Order::STATUS_REJECTED,
+        ]);
     }
 }
